@@ -27,6 +27,8 @@ scoutboard init
 scoutboard import items ./signals.jsonl       # bring-your-own scraper output
 scoutboard source add hn --feed ask
 scoutboard source add github --repo owner/name
+scoutboard source add github_discussions --repo owner/name
+scoutboard source add reddit --subreddit selfhosted        # needs Reddit OAuth app
 scoutboard source add rss https://example.com/feed.xml
 scoutboard ingest
 scoutboard classify
@@ -35,6 +37,9 @@ scoutboard brief --cluster 1 --format md
 scoutboard digest --week
 scoutboard serve                               # local web UI
 ```
+
+Reddit needs a free "script" OAuth app: set `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`.
+GitHub Discussions uses the GraphQL API, so set `GITHUB_TOKEN`.
 
 ## JSONL import format
 

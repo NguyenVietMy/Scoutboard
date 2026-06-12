@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "discussions": {
+        "nodes": [
+          {
+            "number": 7,
+            "title": "Feature request: CSV export",
+            "body": "Could we get a CSV export option for results?",
+            "url": "https://github.com/owner/name/discussions/7",
+            "createdAt": "2026-06-08T09:00:00Z",
+            "author": {"login": "carol"},
+            "category": {"name": "Ideas"},
+            "upvoteCount": 21,
+            "comments": {"totalCount": 9}
+          },
+          {
+            "number": 8,
+            "title": "How do I integrate with Zapier?",
+            "body": "Looking to connect this with Zapier and n8n.",
+            "url": "https://github.com/owner/name/discussions/8",
+            "createdAt": "2026-06-09T10:00:00Z",
+            "author": {"login": "dave"},
+            "category": {"name": "Q&A"},
+            "upvoteCount": 4,
+            "comments": {"totalCount": 2}
+          }
+        ]
+      }
+    }
+  }
+}

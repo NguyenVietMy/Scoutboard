@@ -42,7 +42,15 @@ class Settings(BaseSettings):
     brief_model: str = "claude-opus-4-8"
 
     # GitHub adapter: optional token lifts the unauthenticated rate limit.
+    # Required for the GitHub Discussions adapter (GraphQL needs auth).
     github_token: str | None = Field(default=None, alias="GITHUB_TOKEN")
+
+    # Reddit adapter (OAuth, script app). All three are required to ingest Reddit.
+    reddit_client_id: str | None = Field(default=None, alias="REDDIT_CLIENT_ID")
+    reddit_client_secret: str | None = Field(default=None, alias="REDDIT_CLIENT_SECRET")
+    reddit_user_agent: str = Field(
+        default="scoutboard/0.1 (opportunity research)", alias="REDDIT_USER_AGENT"
+    )
 
     # Database: defaults to local SQLite; set SCOUTBOARD_DATABASE_URL for Postgres
     # (e.g. postgresql+psycopg://user:pass@host/db).

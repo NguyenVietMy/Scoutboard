@@ -1,0 +1,37 @@
+{
+  "kind": "Listing",
+  "data": {
+    "children": [
+      {
+        "kind": "t3",
+        "data": {
+          "id": "abc123",
+          "name": "t3_abc123",
+          "title": "Looking for an open-source Clay alternative",
+          "selftext": "Clay is too expensive for a side project. Any self-hosted enrichment tools?",
+          "author": "builder_x",
+          "permalink": "/r/selfhosted/comments/abc123/looking_for_clay_alt/",
+          "url": "https://www.reddit.com/r/selfhosted/comments/abc123/",
+          "created_utc": 1749550200,
+          "score": 142,
+          "num_comments": 37,
+          "link_flair_text": "Question"
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "def456",
+          "name": "t3_def456",
+          "title": "Migrating off Airtable",
+          "selftext": "We are moving from Airtable to a local-first stack.",
+          "author": "builder_y",
+          "permalink": "/r/selfhosted/comments/def456/migrating_off_airtable/",
+          "created_utc": 1749560200,
+          "score": 50,
+          "num_comments": 12
+        }
+      }
+    ]
+  }
+}

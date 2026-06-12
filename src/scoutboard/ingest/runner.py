@@ -10,8 +10,10 @@ from scoutboard.config import get_settings
 from scoutboard.ingest.base import AdapterError, SourceAdapter
 from scoutboard.ingest.connectors import ConnectorAdapter
 from scoutboard.ingest.github import GitHubIssuesAdapter
+from scoutboard.ingest.github_discussions import GitHubDiscussionsAdapter
 from scoutboard.ingest.hackernews import HackerNewsAdapter
 from scoutboard.ingest.normalize import IngestResult, store_items
+from scoutboard.ingest.reddit import RedditAdapter
 from scoutboard.ingest.rss import RSSAdapter
 from scoutboard.models import Source
 
@@ -24,6 +26,10 @@ def build_adapter(source: Source) -> SourceAdapter:
         return RSSAdapter.from_config(source.config)
     if source.kind == "github":
         return GitHubIssuesAdapter.from_config(source.config, token=settings.github_token)
+    if source.kind == "github_discussions":
+        return GitHubDiscussionsAdapter.from_config(source.config, token=settings.github_token)
+    if source.kind == "reddit":
+        return RedditAdapter.from_config(source.config, settings)
     if source.kind == "connector":
         return ConnectorAdapter.from_config(source.config)
     raise AdapterError(f"unknown source kind '{source.kind}'")
@@ -46,6 +52,10 @@ def _label(source: Source) -> str:
         return f"rss:{cfg.get('url', '')}"
     if source.kind == "github":
         return f"github:{cfg.get('repo', '')}"
+    if source.kind == "github_discussions":
+        return f"github_discussions:{cfg.get('repo', '')}"
+    if source.kind == "reddit":
+        return f"reddit:r/{cfg.get('subreddit', '')}"
     if source.kind == "connector":
         return f"connector:{cfg.get('name', '')}"
     return source.kind

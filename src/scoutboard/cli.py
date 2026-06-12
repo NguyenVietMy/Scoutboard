@@ -63,15 +63,20 @@ def init() -> None:
 
 @source_app.command("add")
 def source_add(
-    kind: str = typer.Argument(..., help="Source kind: hn | rss | github"),
+    kind: str = typer.Argument(
+        ..., help="Source kind: hn | rss | github | github_discussions | reddit"
+    ),
     url: str | None = typer.Argument(None, help="RSS feed URL (for kind=rss)"),
     feed: str = typer.Option("story", help="HN feed: ask | show | story | front | poll"),
     repo: str | None = typer.Option(None, help="GitHub repo as owner/name"),
+    subreddit: str | None = typer.Option(None, help="Subreddit name (for kind=reddit)"),
+    listing: str = typer.Option("new", help="Reddit listing: new | hot | top | rising"),
     limit: int = typer.Option(50, help="Max items to fetch per run."),
 ) -> None:
     """Add a source.
 
     Examples: `source add hn --feed ask`, `source add github --repo owner/name`,
+    `source add github_discussions --repo owner/name`, `source add reddit --subreddit selfhosted`,
     `source add rss https://example.com/feed.xml`.
     """
 
@@ -84,12 +89,19 @@ def source_add(
         if not url:
             raise typer.BadParameter("rss source requires a feed URL")
         config = {"url": url, "limit": limit}
-    elif kind == "github":
+    elif kind in ("github", "github_discussions"):
         if not repo:
-            raise typer.BadParameter("github source requires --repo owner/name")
+            raise typer.BadParameter(f"{kind} source requires --repo owner/name")
         config = {"repo": repo, "limit": limit}
+    elif kind == "reddit":
+        if not subreddit:
+            raise typer.BadParameter("reddit source requires --subreddit")
+        config = {"subreddit": subreddit, "listing": listing, "limit": limit}
     else:
-        raise typer.BadParameter(f"unknown source kind '{kind}' (use hn | rss | github)")
+        raise typer.BadParameter(
+            f"unknown source kind '{kind}' "
+            "(use hn | rss | github | github_discussions | reddit)"
+        )
 
     with get_session() as session:
         source = Source(kind=kind, config=config)
