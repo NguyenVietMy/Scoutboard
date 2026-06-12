@@ -23,6 +23,8 @@ dependencies = [
     "anthropic>=0.40",
     "fastapi>=0.110",
     "uvicorn>=0.30",
+    "python-multipart>=0.0.9",
+    "markdown>=3.6",
 ]
 
 [project.optional-dependencies]

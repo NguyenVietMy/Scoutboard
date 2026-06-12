@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Sources · Scoutboard{% endblock %}
+{% block content %}
+<h1>Sources</h1>
+<p class="muted">Configured ingestion sources. Run <code>scoutboard ingest</code> to fetch.</p>
+
+<table class="sources">
+  <thead><tr><th>#</th><th>kind</th><th>config</th><th>state</th></tr></thead>
+  <tbody>
+    {% for s in sources %}
+    <tr><td>{{ s.id }}</td><td>{{ s.kind }}</td><td><code>{{ s.config }}</code></td><td>{{ 'enabled' if s.enabled else 'disabled' }}</td></tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">No sources yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Add a source</h2>
+<form method="post" action="/sources" class="add-source">
+  <label>Kind
+    <select name="kind">
+      <option value="hn">hn</option>
+      <option value="rss">rss</option>
+      <option value="github">github</option>
+    </select>
+  </label>
+  <label>HN feed <input name="feed" placeholder="ask | show | story | front" value="story"></label>
+  <label>GitHub repo <input name="repo" placeholder="owner/name"></label>
+  <label>RSS url <input name="url" placeholder="https://example.com/feed.xml"></label>
+  <label>Limit <input type="number" name="limit" value="50" style="width:5rem"></label>
+  <button type="submit" class="primary">Add</button>
+</form>
+<p class="muted">Only the field relevant to the chosen kind is used.</p>
+{% endblock %}

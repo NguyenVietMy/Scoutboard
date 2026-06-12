@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ cluster.label }} · Scoutboard{% endblock %}
+{% block content %}
+<p><a href="/">← all clusters</a></p>
+<h1>{{ cluster.label }}</h1>
+<p class="summary">{{ cluster.summary }}</p>
+
+<div class="signals detail-signals">
+  <span>📎 {{ pack.item_count }} items</span>
+  <span>🌐 {{ pack.sources | join(', ') }}</span>
+  <span>📈 {{ pack.mentions_last_week }} mentions this week</span>
+  {% if pack.intents %}<span>intents: {% for i, n in pack.intents %}{{ i }} ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+  {% if pack.tools %}<span>tools: {% for t, n in pack.tools %}{{ t }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+</div>
+
+<div class="actions">
+  <form method="post" action="/clusters/{{ cluster.id }}/state" class="inline">
+    <select name="state">
+      {% for s in states %}<option value="{{ s }}" {{ 'selected' if cluster.state == s }}>{{ s }}</option>{% endfor %}
+    </select>
+    <button type="submit">Set state</button>
+  </form>
+  <form method="post" action="/clusters/{{ cluster.id }}/brief" class="inline">
+    {% if not has_ai %}<input type="hidden" name="rules_only" value="1">{% endif %}
+    <button type="submit" class="primary">
+      {% if has_ai %}Generate AI brief{% else %}Generate brief (offline){% endif %}
+    </button>
+  </form>
+</div>
+
+<h2>Evidence review</h2>
+<ol class="evidence">
+  {% for e in pack.evidence %}
+  <li>
+    <span class="snippet">{{ e.snippet }}</span>
+    <span class="meta">
+      <em>{{ e.source }}</em>{% if e.intent %} · {{ e.intent }}{% endif %}{% if e.published_at %} · {{ e.published_at.date() }}{% endif %}
+      · <a href="{{ e.url }}" target="_blank" rel="noopener">source ↗</a>
+      {% if e.representative %}<span class="badge rep">representative</span>{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ol>
+
+{% if brief_html %}
+<h2>Opportunity brief</h2>
+<article class="brief">{{ brief_html | safe }}</article>
+{% endif %}
+{% endblock %}

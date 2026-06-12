@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Clusters · Scoutboard{% endblock %}
+{% block content %}
+<h1>Opportunity clusters</h1>
+<p class="muted">Repeated unmet needs discovered across your configured sources.</p>
+
+<form class="filters" method="get" action="/">
+  <label>Sort
+    <select name="sort">
+      {% for key, name in sorts.items() %}
+      <option value="{{ key }}" {{ 'selected' if filters.sort == key }}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Source
+    <select name="source">
+      <option value="">any</option>
+      {% for s in sources %}<option value="{{ s }}" {{ 'selected' if filters.source == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Intent
+    <select name="intent">
+      <option value="">any</option>
+      {% for i in intents %}<option value="{{ i }}" {{ 'selected' if filters.intent == i }}>{{ i }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>State
+    <select name="state">
+      <option value="">any</option>
+      {% for s in states %}<option value="{{ s }}" {{ 'selected' if filters.state == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Min items
+    <input type="number" name="min_count" min="1" value="{{ filters.min_count }}" style="width:4rem">
+  </label>
+  <label>Brief
+    <select name="has_brief">
+      <option value="">any</option>
+      <option value="yes" {{ 'selected' if filters.has_brief == 'yes' }}>has brief</option>
+      <option value="no" {{ 'selected' if filters.has_brief == 'no' }}>no brief</option>
+    </select>
+  </label>
+  <button type="submit">Apply</button>
+  <a class="reset" href="/">reset</a>
+</form>
+
+{% if not rows %}
+<p class="empty">No clusters match. Ingest sources, then run <code>scoutboard classify</code> and <code>scoutboard cluster</code>.</p>
+{% endif %}
+
+<ul class="cluster-list">
+  {% for r in rows %}
+  <li class="cluster-card state-{{ r.state }}">
+    <div class="card-head">
+      <a class="label" href="/clusters/{{ r.id }}">{{ r.label }}</a>
+      <span class="badge state">{{ r.state }}</span>
+      {% if r.has_brief %}<span class="badge brief">brief</span>{% endif %}
+    </div>
+    <p class="summary">{{ r.summary }}</p>
+    <div class="signals">
+      <span title="evidence">📎 {{ r.item_count }} items</span>
+      <span title="source diversity">🌐 {{ r.source_count }} sources</span>
+      <span title="recent mentions">📈 {{ r.recent }} this week</span>
+      {% if r.dominant_intent %}<span class="intent">{{ r.dominant_intent }}</span>{% endif %}
+      {% if r.tools %}<span class="tools">tools: {{ r.tools | join(', ') }}</span>{% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

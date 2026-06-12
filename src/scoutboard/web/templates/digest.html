@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Digest · Scoutboard{% endblock %}
+{% block content %}
+<div class="digest-head">
+  <h1>Weekly digest</h1>
+  <form method="get" action="/digest" class="inline">
+    <label>Window (days) <input type="number" name="days" min="1" value="{{ days }}" style="width:5rem"></label>
+    <button type="submit">Refresh</button>
+  </form>
+</div>
+<article class="brief">{{ digest_html | safe }}</article>
+{% endblock %}

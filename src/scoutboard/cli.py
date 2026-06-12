@@ -267,5 +267,19 @@ def export(
         typer.echo(payload)
 
 
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Host to bind."),
+    port: int = typer.Option(8000, help="Port to bind."),
+    reload: bool = typer.Option(False, "--reload", help="Auto-reload (development)."),
+) -> None:
+    """Launch the local web UI (cluster inbox, evidence review, briefs, digest)."""
+
+    import uvicorn
+
+    typer.echo(f"Scoutboard UI at http://{host}:{port}")
+    uvicorn.run("scoutboard.web.app:app", host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     app()
