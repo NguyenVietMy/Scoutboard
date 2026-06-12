@@ -66,6 +66,30 @@ scoutboard import dir ./exports/
 This keeps the open-source core clean and the legal boundary intact — you bring the
 scraper, Scoutboard normalizes and analyzes the output.
 
+## Scaling: Postgres, embeddings & semantic search
+
+SQLite is the default and needs no setup. To use Postgres, install the extra and point
+Scoutboard at your database:
+
+```bash
+pip install -e ".[postgres]"
+$env:SCOUTBOARD_DATABASE_URL = "postgresql+psycopg://user:pass@localhost/scoutboard"
+scoutboard init
+```
+
+Embeddings are optional and opt-in (Anthropic has no embeddings endpoint, so Scoutboard
+uses Voyage AI by default — any provider can be plugged in). With `VOYAGE_API_KEY` set:
+
+```bash
+scoutboard embed                       # embed items
+scoutboard search "open-source Clay alternative"   # semantic search
+scoutboard cluster --use-embeddings    # cluster by meaning instead of TF-IDF
+```
+
+Without a key, clustering stays purely lexical and the core has zero vector dependencies.
+Embeddings are stored as portable JSON vectors (SQLite or Postgres); pgvector can be
+swapped in later for large corpora.
+
 ## Pipeline
 
 ```

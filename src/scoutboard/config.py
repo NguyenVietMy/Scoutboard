@@ -44,9 +44,19 @@ class Settings(BaseSettings):
     # GitHub adapter: optional token lifts the unauthenticated rate limit.
     github_token: str | None = Field(default=None, alias="GITHUB_TOKEN")
 
+    # Database: defaults to local SQLite; set SCOUTBOARD_DATABASE_URL for Postgres
+    # (e.g. postgresql+psycopg://user:pass@host/db).
+    database_url_override: str | None = Field(default=None, alias="SCOUTBOARD_DATABASE_URL")
+
     # Clustering knobs (transparent, no opaque scoring).
     cluster_similarity_threshold: float = 0.18
     use_embeddings: bool = False
+    embedding_similarity_threshold: float = 0.6
+
+    # Optional embedding backend (Anthropic has no embeddings endpoint; Voyage AI
+    # is the default pluggable provider). Embeddings are opt-in.
+    voyage_api_key: str | None = Field(default=None, alias="VOYAGE_API_KEY")
+    voyage_model: str = "voyage-3"
 
     @property
     def db_path(self) -> Path:
@@ -54,7 +64,11 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        return f"sqlite:///{self.db_path}"
+        return self.database_url_override or f"sqlite:///{self.db_path}"
+
+    @property
+    def has_embeddings(self) -> bool:
+        return bool(self.voyage_api_key)
 
     @property
     def has_ai(self) -> bool:

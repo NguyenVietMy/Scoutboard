@@ -118,15 +118,18 @@ def _add_to_centroid(group: _Group, doc: ClusterDoc) -> None:
     group.centroid = {t: v / norm for t, v in new.items()}
 
 
-def cluster_docs(
+def group_docs(
     docs: list[ClusterDoc],
     *,
     threshold: float = 0.18,
     tool_bonus: float = 0.1,
 ) -> list[list[int]]:
-    """Greedy clustering. Returns a list of clusters, each a list of doc indices."""
+    """Greedy/leader grouping over already-vectorized docs (``doc.vector`` set).
 
-    vectorize(docs)
+    Used by both the TF-IDF path (``cluster_docs``) and the embedding path, which
+    supplies dense vectors as ``doc.vector`` before calling this.
+    """
+
     groups: list[_Group] = []
     for idx, doc in enumerate(docs):
         best_group: _Group | None = None
@@ -147,6 +150,18 @@ def cluster_docs(
             g = _Group(members=[idx], centroid=dict(doc.vector), tools=set(doc.tools))
             groups.append(g)
     return [g.members for g in groups]
+
+
+def cluster_docs(
+    docs: list[ClusterDoc],
+    *,
+    threshold: float = 0.18,
+    tool_bonus: float = 0.1,
+) -> list[list[int]]:
+    """TF-IDF clustering: vectorize then greedily group. Returns lists of indices."""
+
+    vectorize(docs)
+    return group_docs(docs, threshold=threshold, tool_bonus=tool_bonus)
 
 
 def top_terms(docs: list[ClusterDoc], member_indices: list[int], limit: int = 6) -> list[str]:

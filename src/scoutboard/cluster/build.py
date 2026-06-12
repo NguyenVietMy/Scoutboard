@@ -81,9 +81,44 @@ def _resolve_state(member_item_ids: list[int], prior: dict[int, str]) -> str:
     return Counter(states).most_common(1)[0][0]
 
 
-def build_clusters(session: Session, threshold: float | None = None) -> BuildReport:
+def _cluster_groups(
+    session: Session,
+    docs: list[lexical.ClusterDoc],
+    threshold: float | None,
+    use_embeddings: bool,
+    provider=None,
+) -> list[list[int]]:
     settings = get_settings()
-    threshold = settings.cluster_similarity_threshold if threshold is None else threshold
+    if use_embeddings:
+        from scoutboard.cluster.embeddings import get_provider, normalize
+        from scoutboard.semantic import embed_items, embeddings_for_items
+
+        prov = provider or get_provider()
+        if prov is not None:
+            embed_items(session, prov)
+            emap = embeddings_for_items(session, [d.item_id for d in docs])
+            if emap and all(d.item_id in emap for d in docs):
+                for d in docs:
+                    vec = normalize(emap[d.item_id])
+                    d.vector = {str(i): v for i, v in enumerate(vec)}
+                thr = (
+                    settings.embedding_similarity_threshold if threshold is None else threshold
+                )
+                return lexical.group_docs(docs, threshold=thr, tool_bonus=0.05)
+    # Lexical fallback (default).
+    thr = settings.cluster_similarity_threshold if threshold is None else threshold
+    return lexical.cluster_docs(docs, threshold=thr)
+
+
+def build_clusters(
+    session: Session,
+    threshold: float | None = None,
+    *,
+    use_embeddings: bool | None = None,
+    provider=None,
+) -> BuildReport:
+    settings = get_settings()
+    use_embeddings = settings.use_embeddings if use_embeddings is None else use_embeddings
 
     prior = _snapshot_states(session)
     _clear(session)
@@ -93,7 +128,7 @@ def build_clusters(session: Session, threshold: float | None = None) -> BuildRep
     if not docs:
         return report
 
-    groups = lexical.cluster_docs(docs, threshold=threshold)
+    groups = _cluster_groups(session, docs, threshold, use_embeddings, provider)
     now = datetime.now(UTC)
 
     for members in groups:

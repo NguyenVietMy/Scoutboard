@@ -129,3 +129,18 @@ class OpportunityBrief(SQLModel, table=True):
     title: str
     markdown: str
     created_at: datetime = Field(default_factory=_utcnow)
+
+
+class ItemEmbedding(SQLModel, table=True):
+    """A dense embedding for an item, for optional semantic search/clustering.
+
+    Stored as a JSON list of floats so it is portable across SQLite and Postgres
+    without requiring pgvector; similarity is computed in Python at MVP scale.
+    """
+
+    __tablename__ = "item_embeddings"
+
+    item_id: int = Field(foreign_key="items.id", primary_key=True)
+    model: str
+    vector: list[float] = Field(default_factory=list, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=_utcnow)

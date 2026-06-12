@@ -249,13 +249,18 @@ def cluster(
     threshold: float | None = typer.Option(
         None, help="Similarity threshold (0-1). Lower = larger, looser clusters."
     ),
+    use_embeddings: bool = typer.Option(
+        False, "--use-embeddings", help="Cluster by embeddings (needs VOYAGE_API_KEY)."
+    ),
 ) -> None:
     """Group signals into opportunity clusters (rebuilds the cluster set)."""
 
     from scoutboard.cluster.build import build_clusters
 
     with get_session() as session:
-        report = build_clusters(session, threshold=threshold)
+        report = build_clusters(
+            session, threshold=threshold, use_embeddings=use_embeddings or None
+        )
     typer.echo(
         f"Built {report.clusters} cluster(s) "
         f"({report.multi_item_clusters} with multiple items) "
@@ -359,6 +364,45 @@ def export(
         typer.echo(f"Exported {what} ({format}) to {output}")
     else:
         typer.echo(payload)
+
+
+@app.command()
+def embed() -> None:
+    """Compute embeddings for items (needs VOYAGE_API_KEY). Enables semantic search."""
+
+    from scoutboard.semantic import EmbeddingsUnavailable, embed_items
+
+    try:
+        with get_session() as session:
+            result = embed_items(session)
+    except EmbeddingsUnavailable as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Embedded {result.embedded} item(s); {result.skipped} already current.")
+
+
+@app.command()
+def search(
+    query: str = typer.Argument(..., help="Free-text query."),
+    k: int = typer.Option(10, "-k", help="Number of results."),
+) -> None:
+    """Semantic search over embedded items (needs `embed` to have run)."""
+
+    from scoutboard.semantic import EmbeddingsUnavailable
+    from scoutboard.semantic import search as run_search
+
+    try:
+        with get_session() as session:
+            hits = run_search(session, query, k=k)
+    except EmbeddingsUnavailable as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    if not hits:
+        typer.echo("No embedded items. Run `scoutboard embed` first.")
+        return
+    for hit in hits:
+        item = hit.item
+        typer.echo(f"  {hit.score:.3f}  [{item.source}] {item.title}  {item.source_url}")
 
 
 @app.command()
