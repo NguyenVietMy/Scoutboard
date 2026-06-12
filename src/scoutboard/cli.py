@@ -21,8 +21,13 @@ app = typer.Typer(
 )
 source_app = typer.Typer(help="Configure ingestion sources.", no_args_is_help=True)
 import_app = typer.Typer(help="Import items from external files.", no_args_is_help=True)
+connector_app = typer.Typer(
+    help="Bring-your-own connectors (external commands that emit JSONL).",
+    no_args_is_help=True,
+)
 app.add_typer(source_app, name="source")
 app.add_typer(import_app, name="import")
+app.add_typer(connector_app, name="connector")
 
 
 def _version_callback(value: bool) -> None:
@@ -126,6 +131,95 @@ def import_items(
         f"Imported {result.inserted} new item(s); "
         f"{result.skipped} duplicate(s); {result.failed} invalid line(s)."
     )
+
+
+@import_app.command("dir")
+def import_dir(
+    directory: Path = typer.Argument(
+        ..., exists=True, file_okay=False, help="Folder of *.jsonl files."
+    ),
+) -> None:
+    """Import every *.jsonl file in a directory (bulk BYO-scraper import)."""
+
+    from scoutboard.ingest.jsonl import import_jsonl_dir
+
+    with get_session() as session:
+        result = import_jsonl_dir(session, directory)
+    typer.echo(
+        f"Imported {result.inserted} new item(s); "
+        f"{result.skipped} duplicate(s); {result.failed} invalid line(s)."
+    )
+
+
+@connector_app.command("add")
+def connector_add(
+    name: str = typer.Argument(..., help="A name for this connector."),
+    command: str = typer.Option(
+        ..., "--command", "-c", help="Shell command that prints import-items JSONL to stdout."
+    ),
+) -> None:
+    """Register a BYO connector (e.g. your YouTube/Telegram/private scraper)."""
+
+    from scoutboard.models import Source
+
+    with get_session() as session:
+        source = Source(kind="connector", config={"name": name, "command": command})
+        session.add(source)
+        session.commit()
+        session.refresh(source)
+    typer.echo(f"Added connector #{source.id}: {name}")
+
+
+@connector_app.command("list")
+def connector_list() -> None:
+    """List registered connectors."""
+
+    from sqlmodel import select
+
+    from scoutboard.models import Source
+
+    with get_session() as session:
+        rows = session.exec(select(Source).where(Source.kind == "connector")).all()
+    if not rows:
+        typer.echo("No connectors. Add one with `scoutboard connector add <name> -c '<command>'`.")
+        return
+    for s in rows:
+        status = "enabled" if s.enabled else "disabled"
+        name = s.config.get("name", "")
+        command = s.config.get("command", "")
+        typer.echo(f"#{s.id}  {name:<16} {status:<8} {command}")
+
+
+@connector_app.command("run")
+def connector_run(
+    name: str | None = typer.Argument(None, help="Run only this connector (default: all)."),
+) -> None:
+    """Run connectors and import their output."""
+
+    from sqlmodel import select
+
+    from scoutboard.ingest.normalize import store_items
+    from scoutboard.ingest.runner import build_adapter
+    from scoutboard.models import Source
+
+    with get_session() as session:
+        stmt = select(Source).where(Source.kind == "connector", Source.enabled == True)  # noqa: E712
+        connectors = [
+            s for s in session.exec(stmt).all() if name is None or s.config.get("name") == name
+        ]
+        if not connectors:
+            typer.echo("No matching connectors.")
+            return
+        for source in connectors:
+            label = source.config.get("name", source.id)
+            try:
+                result = store_items(session, build_adapter(source).fetch())
+                typer.echo(
+                    f"  {label}: {result.inserted} new, {result.skipped} dup, "
+                    f"{result.failed} failed"
+                )
+            except Exception as exc:  # noqa: BLE001 - surface connector errors to the user
+                typer.echo(f"  {label}: ERROR — {exc}")
 
 
 @app.command()

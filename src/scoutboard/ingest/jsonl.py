@@ -17,27 +17,35 @@ from scoutboard.ingest.normalize import IngestResult, store_item
 from scoutboard.schemas import NormalizedItem
 
 
+def parse_line(line: str) -> NormalizedItem | None:
+    """Parse one JSONL line into a NormalizedItem, or None if invalid."""
+
+    line = line.strip()
+    if not line:
+        return None
+    try:
+        return NormalizedItem.model_validate(json.loads(line))
+    except (json.JSONDecodeError, ValidationError):
+        return None
+
+
+def iter_jsonl_text(text: str) -> Iterator[tuple[int, NormalizedItem | None]]:
+    """Yield (line_number, item-or-None) for each non-blank line of JSONL text."""
+
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        if not raw.strip():
+            continue
+        yield lineno, parse_line(raw)
+
+
 def iter_jsonl(path: Path) -> Iterator[tuple[int, NormalizedItem | None]]:
-    """Yield (line_number, item-or-None) for each non-blank line.
+    """Yield (line_number, item-or-None) for each non-blank line of a JSONL file."""
 
-    None means the line failed to parse/validate; the caller decides how to count it.
-    """
-
-    with path.open("r", encoding="utf-8") as fh:
-        for lineno, raw in enumerate(fh, start=1):
-            line = raw.strip()
-            if not line:
-                continue
-            try:
-                data = json.loads(line)
-                yield lineno, NormalizedItem.model_validate(data)
-            except (json.JSONDecodeError, ValidationError):
-                yield lineno, None
+    yield from iter_jsonl_text(path.read_text(encoding="utf-8"))
 
 
-def import_jsonl(session: Session, path: Path) -> IngestResult:
-    result = IngestResult()
-    for _lineno, item in iter_jsonl(path):
+def _store_pairs(session: Session, pairs, result: IngestResult) -> None:
+    for _lineno, item in pairs:
         if item is None:
             result.failed += 1
             continue
@@ -48,5 +56,20 @@ def import_jsonl(session: Session, path: Path) -> IngestResult:
                 result.skipped += 1
         except Exception:
             result.failed += 1
+
+
+def import_jsonl(session: Session, path: Path) -> IngestResult:
+    result = IngestResult()
+    _store_pairs(session, iter_jsonl(path), result)
+    session.commit()
+    return result
+
+
+def import_jsonl_dir(session: Session, directory: Path) -> IngestResult:
+    """Import every ``*.jsonl`` file in a directory (bulk BYO-scraper import)."""
+
+    result = IngestResult()
+    for path in sorted(directory.glob("*.jsonl")):
+        _store_pairs(session, iter_jsonl(path), result)
     session.commit()
     return result

@@ -44,6 +44,28 @@ Each line is one normalized item:
 {"source":"youtube","source_url":"https://...","external_id":"youtube:comment:123","title":"...","body":"...","author":"handle","published_at":"2026-06-12T10:30:00Z","engagement":{"likes":123,"comments":45,"views":12000},"parent":{"type":"video","title":"...","url":"https://..."},"raw_payload":{}}
 ```
 
+## Bring-your-own connectors
+
+Legally-sensitive or richer sources (YouTube, Telegram, Zalo, TikTok, Facebook,
+Product Hunt, private scrapers) are **not bundled**. Instead, a connector is any command
+you provide whose stdout is import-items JSONL (the same schema above):
+
+```bash
+scoutboard connector add youtube -c "python my_youtube_scraper.py --channel foo"
+scoutboard connector list
+scoutboard connector run            # runs all connectors and imports their output
+```
+
+Connectors also run as part of `scoutboard ingest`. You can also bulk-import a folder of
+JSONL files:
+
+```bash
+scoutboard import dir ./exports/
+```
+
+This keeps the open-source core clean and the legal boundary intact — you bring the
+scraper, Scoutboard normalizes and analyzes the output.
+
 ## Pipeline
 
 ```
