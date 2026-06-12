@@ -244,5 +244,28 @@ def digest(
         typer.echo(markdown)
 
 
+@app.command()
+def export(
+    what: str = typer.Option("items", "--what", help="items | clusters | briefs"),
+    format: str = typer.Option("json", "--format", help="json | csv"),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Write to a file."),
+) -> None:
+    """Export items, clusters, or briefs to CSV or JSON."""
+
+    from scoutboard.export import export_data
+
+    try:
+        with get_session() as session:
+            payload = export_data(session, what, format)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if output:
+        output.write_text(payload, encoding="utf-8")
+        typer.echo(f"Exported {what} ({format}) to {output}")
+    else:
+        typer.echo(payload)
+
+
 if __name__ == "__main__":
     app()
