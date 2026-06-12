@@ -1,0 +1,23 @@
+[
+  {
+    "number": 101,
+    "html_url": "https://github.com/owner/name/issues/101",
+    "title": "Feature request: export to CSV",
+    "body": "It would be great if we could export results to CSV.",
+    "user": {"login": "carol"},
+    "created_at": "2026-06-08T09:00:00Z",
+    "comments": 5,
+    "reactions": {"total_count": 14},
+    "labels": [{"name": "enhancement"}, {"name": "good first issue"}]
+  },
+  {
+    "number": 102,
+    "html_url": "https://github.com/owner/name/pull/102",
+    "title": "Fix typo",
+    "body": "typo fix",
+    "user": {"login": "dave"},
+    "created_at": "2026-06-08T10:00:00Z",
+    "comments": 0,
+    "pull_request": {"url": "https://api.github.com/repos/owner/name/pulls/102"}
+  }
+]

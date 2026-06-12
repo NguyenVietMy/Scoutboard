@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Example Builder Blog</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Why we left Airtable</title>
+      <link>https://example.com/posts/left-airtable</link>
+      <guid>https://example.com/posts/left-airtable</guid>
+      <author>writer@example.com</author>
+      <pubDate>Tue, 10 Jun 2026 12:00:00 GMT</pubDate>
+      <description>We migrated from Airtable to a local-first stack. Here is why.</description>
+    </item>
+    <item>
+      <title>Comparing enrichment tools</title>
+      <link>https://example.com/posts/enrichment</link>
+      <guid>https://example.com/posts/enrichment</guid>
+      <pubDate>Wed, 11 Jun 2026 12:00:00 GMT</pubDate>
+      <description>Clay vs Apollo vs self-hosted options.</description>
+    </item>
+  </channel>
+</rss>

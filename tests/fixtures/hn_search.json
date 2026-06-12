@@ -1,0 +1,23 @@
+{
+  "hits": [
+    {
+      "objectID": "39000001",
+      "title": "Ask HN: Open-source alternative to Clay?",
+      "url": null,
+      "author": "alice",
+      "points": 87,
+      "num_comments": 23,
+      "created_at_i": 1749550200,
+      "story_text": "Is there an open-source Clay alternative for enrichment workflows?"
+    },
+    {
+      "objectID": "39000002",
+      "title": "Ask HN: Self-hosted lead enrichment?",
+      "author": "bob",
+      "points": 12,
+      "num_comments": 4,
+      "created_at_i": 1749560200,
+      "story_text": "Looking for self-hosted lead enrichment tooling."
+    }
+  ]
+}
