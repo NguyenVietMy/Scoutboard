@@ -150,5 +150,30 @@ def ingest() -> None:
             )
 
 
+@app.command()
+def classify(
+    rules_only: bool = typer.Option(
+        False, "--rules-only", help="Skip the AI pass; use rule-based signals only."
+    ),
+) -> None:
+    """Detect candidate signals (rules) and refine them with AI when a key is set."""
+
+    from scoutboard.signals.pipeline import classify as run_classify
+
+    settings = get_settings()
+    with get_session() as session:
+        report = run_classify(session, use_ai=not rules_only)
+
+    typer.echo(
+        f"Scanned {report.scanned} item(s); created {report.candidates} candidate signal(s)."
+    )
+    if report.used_ai:
+        typer.echo(f"AI refined {report.refined} signal(s); {report.ai_failed} failed.")
+    elif rules_only:
+        typer.echo("AI pass skipped (--rules-only).")
+    elif not settings.has_ai:
+        typer.echo("AI pass skipped: ANTHROPIC_API_KEY not set. Signals are rule-based.")
+
+
 if __name__ == "__main__":
     app()
