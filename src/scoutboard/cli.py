@@ -151,6 +151,25 @@ def ingest() -> None:
 
 
 @app.command()
+def cluster(
+    threshold: float | None = typer.Option(
+        None, help="Similarity threshold (0-1). Lower = larger, looser clusters."
+    ),
+) -> None:
+    """Group signals into opportunity clusters (rebuilds the cluster set)."""
+
+    from scoutboard.cluster.build import build_clusters
+
+    with get_session() as session:
+        report = build_clusters(session, threshold=threshold)
+    typer.echo(
+        f"Built {report.clusters} cluster(s) "
+        f"({report.multi_item_clusters} with multiple items) "
+        f"covering {report.items_clustered} signal(s)."
+    )
+
+
+@app.command()
 def classify(
     rules_only: bool = typer.Option(
         False, "--rules-only", help="Skip the AI pass; use rule-based signals only."
