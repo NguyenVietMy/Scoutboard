@@ -1,0 +1,33 @@
+# Scoutboard Weekly Digest
+_Generated {{ generated_at.date() }} · window: last {{ days }} days_
+
+{% if not sections.top_new and not sections.growing and not sections.complaints and not sections.migrations %}
+No notable cluster activity in this window. Ingest more sources or widen the window.
+{% endif %}
+{% if sections.top_new %}
+## Top new clusters
+{% for c in sections.top_new %}
+- **{{ c.label }}** — {{ c.item_count }} item(s), {{ c.sources }} source(s){% if c.has_brief %} · _brief available_{% endif %}
+  {{ c.summary }}
+{% endfor %}
+{% endif %}
+{% if sections.growing %}
+## Clusters with growing activity
+{% for c in sections.growing %}
+- **{{ c.label }}** — {{ c.recent }} mention(s) in the last {{ days }} days ({{ c.item_count }} total)
+{% endfor %}
+{% endif %}
+{% if sections.complaints %}
+## Notable repeated complaints
+{% for c in sections.complaints %}
+- **{{ c.label }}** — {{ c.item_count }} item(s); tools: {{ c.tools or "—" }}
+{% endfor %}
+{% endif %}
+{% if sections.migrations %}
+## Notable migration signals
+{% for c in sections.migrations %}
+- **{{ c.label }}** — {{ c.item_count }} item(s); tools: {{ c.tools or "—" }}
+{% endfor %}
+{% endif %}
+---
+_Review clusters and generate briefs with `scoutboard brief --cluster <id>`._

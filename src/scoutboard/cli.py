@@ -194,5 +194,55 @@ def classify(
         typer.echo("AI pass skipped: ANTHROPIC_API_KEY not set. Signals are rule-based.")
 
 
+@app.command()
+def brief(
+    cluster: int = typer.Option(..., "--cluster", help="Cluster id to brief."),
+    format: str = typer.Option("md", "--format", help="Output format (md)."),
+    rules_only: bool = typer.Option(
+        False, "--rules-only", help="Skip AI prose; emit the structured cited brief only."
+    ),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Write to a file."),
+) -> None:
+    """Generate a cited Markdown opportunity brief for a cluster."""
+
+    if format != "md":
+        raise typer.BadParameter("only 'md' is supported in the MVP")
+
+    from scoutboard.briefs.generator import generate_brief
+
+    with get_session() as session:
+        result = generate_brief(session, cluster, use_ai=not rules_only)
+    if result is None:
+        typer.echo(f"No cluster #{cluster} found.")
+        raise typer.Exit(code=1)
+
+    _title, markdown = result
+    if output:
+        output.write_text(markdown, encoding="utf-8")
+        typer.echo(f"Wrote brief for cluster #{cluster} to {output}")
+    else:
+        typer.echo(markdown)
+
+
+@app.command()
+def digest(
+    week: bool = typer.Option(False, "--week", help="Summarize the last 7 days."),
+    days: int = typer.Option(7, "--days", help="Window size in days."),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Write to a file."),
+) -> None:
+    """Generate the weekly digest of notable new and changed clusters."""
+
+    from scoutboard.briefs.digest import generate_digest
+
+    window = 7 if week else days
+    with get_session() as session:
+        markdown = generate_digest(session, days=window)
+    if output:
+        output.write_text(markdown, encoding="utf-8")
+        typer.echo(f"Wrote digest to {output}")
+    else:
+        typer.echo(markdown)
+
+
 if __name__ == "__main__":
     app()
