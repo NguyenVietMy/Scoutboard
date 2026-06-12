@@ -50,6 +50,16 @@ def test_generate_brief_offline_is_cited_and_persisted(scoutboard_home):
         assert result is not None
         _title, md = result
         assert "## Evidence" in md
+        # The offline path now writes real analytic sections, fully cited.
+        for section in (
+            "## Summary",
+            "## What people are asking for",
+            "## Product opportunity angle",
+            "## Possible MVP",
+            "## Risks and why this might be noise",
+        ):
+            assert section in md
+        assert "[1]" in md  # at least one evidence citation
         # Provenance: a real source URL appears in the rendered brief.
         pack = gather_cluster_evidence(session, cid)
         assert pack.evidence[0].url in md

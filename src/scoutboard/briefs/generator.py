@@ -14,6 +14,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlmodel import Session
 
 from scoutboard.briefs.evidence import ClusterEvidence, gather_cluster_evidence
+from scoutboard.briefs.offline import build_offline_body
 from scoutboard.llm.client import LLMClient
 from scoutboard.models import OpportunityBrief
 
@@ -82,8 +83,11 @@ def generate_brief(
         return None
 
     client = LLMClient()
-    ai_body = _build_ai_body(evidence, client) if use_ai else None
-    markdown = render_brief(evidence, ai_body)
+    body = _build_ai_body(evidence, client) if use_ai else None
+    if body is None:
+        # No key (or --rules-only): render the deterministic, fully-cited body.
+        body = build_offline_body(evidence)
+    markdown = render_brief(evidence, body)
     title = evidence.cluster.label.title() if evidence.cluster.label else "Opportunity"
 
     session.add(OpportunityBrief(cluster_id=cluster_id, title=title, markdown=markdown))

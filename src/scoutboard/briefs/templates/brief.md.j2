@@ -7,14 +7,8 @@
 **Momentum:** {{ mentions_last_week }} mention(s) in the last 7 days
 **Mentioned tools / competitors:** {{ tools or "—" }}
 
-{% if ai_body %}{{ ai_body }}
-{% else %}> _AI analysis skipped — set `ANTHROPIC_API_KEY` for the full narrative brief.
-> The structured, fully-cited evidence below is generated from source data._
+{{ ai_body }}
 
-## What people are asking for
-The cluster groups {{ item_count }} item(s) across {{ sources or "various sources" }}
-with intent(s): {{ intents or "mixed" }}. See the cited evidence for the verbatim asks.
-{% endif %}
 ## Evidence
 {% for e in evidence %}
 {{ e.n }}. {{ e.snippet }}
