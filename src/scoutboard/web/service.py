@@ -7,7 +7,7 @@ no opaque scoring (MVP.md §Cluster Sorts).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session, select
 
@@ -36,6 +36,7 @@ class ClusterRow:
     state: str
     has_brief: bool
     last_seen: datetime | None
+    tags: list[str] = field(default_factory=list)
 
     @property
     def source_count(self) -> int:
@@ -48,7 +49,9 @@ class Filters:
     intent: str | None = None
     state: str | None = None
     tool: str | None = None
+    tag: str | None = None
     min_count: int = 1
+    within_days: int | None = None  # only clusters active in the last N days
     has_brief: str | None = None  # "yes" | "no" | None
     sort: str = "recent"
 
@@ -69,6 +72,7 @@ def _row(cluster: Cluster, pack: ClusterEvidence, has_brief: bool) -> ClusterRow
         state=cluster.state,
         has_brief=has_brief,
         last_seen=cluster.latest_seen_at,
+        tags=list(cluster.topic_terms),
     )
 
 
@@ -82,11 +86,14 @@ def list_clusters(session: Session, filters: Filters) -> list[ClusterRow]:
             continue
         rows.append(_row(cluster, pack, cluster.id in brief_ids))
 
-    rows = [r for r in rows if _matches(r, filters)]
+    cutoff = (
+        now - timedelta(days=filters.within_days) if filters.within_days else None
+    )
+    rows = [r for r in rows if _matches(r, filters, cutoff)]
     return _sort(rows, filters.sort)
 
 
-def _matches(row: ClusterRow, f: Filters) -> bool:
+def _matches(row: ClusterRow, f: Filters, cutoff: datetime | None) -> bool:
     if f.source and f.source not in row.sources:
         return False
     if f.intent and f.intent not in {i for i, _ in row.intents}:
@@ -95,7 +102,11 @@ def _matches(row: ClusterRow, f: Filters) -> bool:
         return False
     if f.tool and f.tool.lower() not in {t.lower() for t in row.tools}:
         return False
+    if f.tag and f.tag.lower() not in {t.lower() for t in row.tags}:
+        return False
     if row.item_count < f.min_count:
+        return False
+    if cutoff is not None and (row.last_seen is None or row.last_seen < cutoff):
         return False
     if f.has_brief == "yes" and not row.has_brief:
         return False
@@ -125,6 +136,10 @@ def all_sources(rows: list[ClusterRow]) -> list[str]:
 
 def all_intents(rows: list[ClusterRow]) -> list[str]:
     return sorted({i for r in rows for i, _ in r.intents})
+
+
+def all_tags(rows: list[ClusterRow]) -> list[str]:
+    return sorted({t for r in rows for t in r.tags})
 
 
 def latest_brief(session: Session, cluster_id: int) -> OpportunityBrief | None:

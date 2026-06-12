@@ -12,6 +12,7 @@ from scoutboard.db import get_session
 from scoutboard.ingest.jsonl import import_jsonl
 from scoutboard.models import Cluster, OpportunityBrief, Source
 from scoutboard.signals.pipeline import classify
+from scoutboard.web import service
 from scoutboard.web.app import create_app
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -66,6 +67,31 @@ def test_set_state_and_filter(scoutboard_home):
     # Filtering by state=archived shows it; state=new should not.
     archived = client.get("/", params={"state": "archived"})
     assert str(cid) in archived.text
+
+
+def test_tag_filter_matches_topic_terms(scoutboard_home):
+    with get_session() as session:
+        _seed(session)
+        all_rows = service.list_clusters(session, service.Filters())
+        tags = service.all_tags(all_rows)
+        assert tags  # clusters expose topic terms as tags
+
+        a_tag = tags[0]
+        filtered = service.list_clusters(session, service.Filters(tag=a_tag))
+        assert filtered
+        assert all(a_tag in r.tags for r in filtered)
+        # A tag that doesn't exist returns nothing.
+        assert service.list_clusters(session, service.Filters(tag="zzzznope")) == []
+
+
+def test_within_days_filters_by_recency(scoutboard_home):
+    with get_session() as session:
+        _seed(session)
+        # Seed items carry no published_at -> last_seen is None -> excluded by a window.
+        recent = service.list_clusters(session, service.Filters(within_days=7))
+        assert recent == []
+        # No window -> all clusters present.
+        assert service.list_clusters(session, service.Filters()) != []
 
 
 def test_digest_and_sources_pages(scoutboard_home):

@@ -30,6 +30,18 @@
       {% for s in states %}<option value="{{ s }}" {{ 'selected' if filters.state == s }}>{{ s }}</option>{% endfor %}
     </select>
   </label>
+  <label>Tag
+    <select name="tag">
+      <option value="">any</option>
+      {% for t in tags %}<option value="{{ t }}" {{ 'selected' if filters.tag == t }}>{{ t }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Active within
+    <select name="within_days">
+      <option value="">any time</option>
+      {% for d in [1, 7, 30, 90] %}<option value="{{ d }}" {{ 'selected' if filters.within_days == d }}>{{ d }} days</option>{% endfor %}
+    </select>
+  </label>
   <label>Min items
     <input type="number" name="min_count" min="1" value="{{ filters.min_count }}" style="width:4rem">
   </label>

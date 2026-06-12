@@ -39,7 +39,9 @@ def create_app() -> FastAPI:
         intent: str | None = None,
         state: str | None = None,
         tool: str | None = None,
+        tag: str | None = None,
         min_count: int = 1,
+        within_days: int | None = None,
         has_brief: str | None = None,
         sort: str = "recent",
     ):
@@ -48,7 +50,9 @@ def create_app() -> FastAPI:
             intent=intent or None,
             state=state or None,
             tool=tool or None,
+            tag=tag or None,
             min_count=min_count,
+            within_days=within_days or None,
             has_brief=has_brief or None,
             sort=sort,
         )
@@ -65,6 +69,7 @@ def create_app() -> FastAPI:
                 "sorts": service.SORTS,
                 "sources": service.all_sources(all_rows),
                 "intents": service.all_intents(all_rows),
+                "tags": service.all_tags(all_rows),
                 "states": [s.value for s in ClusterState],
                 "has_ai": get_settings().has_ai,
             },
