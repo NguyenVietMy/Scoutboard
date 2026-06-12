@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scoutboard"
+version = "0.1.0"
+description = "Local-first opportunity discovery workbench: turn public signals into cited opportunity briefs."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Scoutboard contributors" }]
+keywords = ["opportunity-discovery", "local-first", "social-listening", "indie-hackers"]
+
+dependencies = [
+    "typer>=0.12",
+    "sqlmodel>=0.0.22",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "httpx>=0.27",
+    "feedparser>=6.0",
+    "jinja2>=3.1",
+    "anthropic>=0.40",
+    "fastapi>=0.110",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+scoutboard = "scoutboard.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/scoutboard/scoutboard"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scoutboard"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]  # Typer uses function calls in argument defaults
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
