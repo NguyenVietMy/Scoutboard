@@ -8,6 +8,7 @@ straight onto the ``signals`` table.
 
 from __future__ import annotations
 
+import html
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -74,6 +75,17 @@ _STOPWORDS = {
 
 _WORD = re.compile(r"[a-zA-Z][a-zA-Z0-9+\-]{2,}")
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_URL = re.compile(r"https?://\S+|www\.\S+")
+
+
+def clean_text(text: str | None) -> str:
+    """Decode HTML entities and drop URLs before tokenizing.
+
+    Sources like the HN Algolia API return HTML-escaped text, and pasted links
+    add noise tokens (``https``, ``com``); both wreck topic terms and clusters.
+    """
+
+    return _URL.sub(" ", html.unescape(text or ""))
 
 
 @dataclass
@@ -97,6 +109,7 @@ def _matched_intents(text: str) -> list[tuple[str, int]]:
 
 
 def extract_topic_terms(text: str, limit: int = 8) -> list[str]:
+    text = clean_text(text)
     counts = Counter(
         w for w in (m.group(0).lower() for m in _WORD.finditer(text)) if w not in _STOPWORDS
     )
@@ -105,6 +118,7 @@ def extract_topic_terms(text: str, limit: int = 8) -> list[str]:
 
 def extract_tools(text: str) -> list[str]:
     found: dict[str, None] = {}  # preserve order, dedupe case-insensitively
+    text = clean_text(text)
     lowered = text.lower()
     for tool in KNOWN_TOOLS:
         if re.search(rf"\b{re.escape(tool)}\b", lowered):
@@ -130,6 +144,7 @@ def detect(text: str) -> SignalDraft | None:
 
     if not text or not text.strip():
         return None
+    text = html.unescape(text)  # decode entities so apostrophe'd patterns match
     low = text.lower()
     matched = _matched_intents(low)
     if not matched:

@@ -7,6 +7,7 @@ against a canned payload with no network.
 
 from __future__ import annotations
 
+import html
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
@@ -35,13 +36,17 @@ def parse_hits(hits: list[dict], feed: str) -> list[NormalizedItem]:
             continue
         created = hit.get("created_at_i")
         published = datetime.fromtimestamp(created, tz=UTC) if created else None
-        body = hit.get("story_text") or hit.get("comment_text") or ""
+        # Algolia returns HTML-escaped text (e.g. &#x27; &#x2f; &quot;); decode it
+        # so stored bodies and all downstream tokenizing see real characters.
+        raw_title = hit.get("title") or hit.get("story_title")
+        title = html.unescape(raw_title) if raw_title else None
+        body = html.unescape(hit.get("story_text") or hit.get("comment_text") or "")
         items.append(
             NormalizedItem(
                 source="hn",
                 external_id=f"hn:{object_id}",
                 source_url=f"https://news.ycombinator.com/item?id={object_id}",
-                title=hit.get("title") or hit.get("story_title"),
+                title=title,
                 body=body,
                 author=hit.get("author"),
                 published_at=published,

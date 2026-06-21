@@ -15,14 +15,15 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from scoutboard.signals.rules import _STOPWORDS
+from scoutboard.signals.rules import _STOPWORDS, clean_text
 
 _WORD = re.compile(r"[a-zA-Z][a-zA-Z0-9+\-]{2,}")
 
 
 def tokenize(text: str) -> list[str]:
+    text = clean_text(text)
     return [
-        w for w in (m.group(0).lower() for m in _WORD.finditer(text or "")) if w not in _STOPWORDS
+        w for w in (m.group(0).lower() for m in _WORD.finditer(text)) if w not in _STOPWORDS
     ]
 
 

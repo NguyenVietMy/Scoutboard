@@ -45,6 +45,23 @@ def test_topic_terms_drop_stopwords():
     assert "the" not in terms and "for" not in terms
 
 
+def test_topic_terms_strip_html_entities_and_urls():
+    # HN's Algolia API returns HTML-escaped text; pasted links add noise tokens.
+    text = "Anyone tried Supabase? It&#x27;s great, see https://github.com/foo/bar"
+    terms = rules.extract_topic_terms(text)
+    assert "supabase" in terms
+    # Entity fragments and URL parts must never become topic terms.
+    for junk in ("x27", "x2f", "quot", "https", "github", "com"):
+        assert junk not in terms
+
+
+def test_detect_matches_through_html_entity_apostrophe():
+    # &#x27; is an apostrophe: "doesn't work" must still match the complaint rule.
+    draft = rules.detect("This API doesn&#x27;t work and it&#x27;s so frustrating.")
+    assert draft is not None
+    assert draft.intent == Intent.complaint.value
+
+
 # --- pipeline: rules over imported items ---------------------------------------
 
 
