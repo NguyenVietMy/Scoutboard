@@ -6,7 +6,7 @@ from sqlalchemy import inspect
 from sqlmodel import select
 
 from scoutboard import config, db
-from scoutboard.cli import _STARTER_SOURCES, quickstart
+from scoutboard.cli import _STARTER_SOURCES, quickstart, run
 from scoutboard.models import Source
 
 EXPECTED_TABLES = {
@@ -50,3 +50,9 @@ def test_quickstart_seeds_sources_and_is_idempotent(scoutboard_home):
     with db.get_session() as session:
         again = session.exec(select(Source)).all()
     assert len(again) == len(_STARTER_SOURCES)
+
+
+def test_run_pipeline_no_sources_does_not_crash(scoutboard_home):
+    # With no sources, `run` ingests nothing and the classify/cluster steps are
+    # no-ops — the orchestration must complete cleanly (no network involved).
+    run(rules_only=True, use_embeddings=False, digest_out=None)

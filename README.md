@@ -16,7 +16,7 @@ snippets. No opportunity brief makes a claim without attached source evidence.
 ## 5 minutes to your first brief
 
 ```bash
-pip install -e .
+pip install -e .          # from a clone (once released on PyPI: pip install scoutboard)
 scoutboard quickstart     # seeds key-free starter feeds (HN + Reddit/Lobsters RSS)
 scoutboard ingest         # pull items from those feeds
 scoutboard classify       # detect + (optionally) AI-refine signals
@@ -68,6 +68,32 @@ scoutboard source list
 Core sources are Hacker News, RSS/Atom, GitHub issues, GitHub Discussions, and Reddit. Reddit's
 public `.rss` feeds work through the RSS adapter with no OAuth; the native `reddit` source needs a
 free "script" app (`REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`).
+
+## Keep it fresh (scheduled runs)
+
+Scoutboard gets more useful as the corpus grows, so run the whole pipeline on a schedule.
+`scoutboard run` does ingest → classify → cluster in one shot (add `--digest digest.md` to also
+write the weekly digest):
+
+```bash
+scoutboard run                       # ingest -> classify -> cluster
+scoutboard run --rules-only          # skip the AI pass (free)
+scoutboard run --digest digest.md    # also write the weekly digest
+```
+
+**Linux/macOS (cron)** — daily at 8am:
+
+```cron
+0 8 * * *  cd /path/to/Scoutboard && /path/to/.venv/bin/scoutboard run >> ~/scoutboard.log 2>&1
+```
+
+**Windows (Task Scheduler)** — daily at 8am:
+
+```powershell
+$action  = New-ScheduledTaskAction -Execute "C:\path\to\.venv\Scripts\scoutboard.exe" -Argument "run" -WorkingDirectory "C:\path\to\Scoutboard"
+$trigger = New-ScheduledTaskTrigger -Daily -At 8am
+Register-ScheduledTask -TaskName "Scoutboard daily" -Action $action -Trigger $trigger
+```
 
 ## Bring-your-own connectors
 
@@ -129,6 +155,26 @@ collect public signals -> detect repeated unmet needs -> review evidence -> gene
 ```
 
 See `MVP.md` for the full product thesis and scope.
+
+## Releasing to PyPI (maintainers)
+
+Publishing is automated via GitHub Actions + PyPI **Trusted Publishing** (OIDC) — no API tokens
+are stored. One-time setup:
+
+1. On PyPI, add a **pending publisher** (Account → Publishing): project `scoutboard`, owner
+   `NguyenVietMy`, repository `Scoutboard`, workflow `publish.yml`, environment `pypi`.
+2. In the GitHub repo, create an Environment named `pypi` (Settings → Environments).
+
+Then, to cut a release:
+
+```bash
+# bump version in pyproject.toml, commit, then:
+git tag v0.1.0 && git push origin v0.1.0
+gh release create v0.1.0 --generate-notes
+```
+
+Publishing the GitHub Release triggers `.github/workflows/publish.yml`, which builds and uploads
+to PyPI. To build/verify locally first: `python -m build && twine check dist/*`.
 
 ## License
 

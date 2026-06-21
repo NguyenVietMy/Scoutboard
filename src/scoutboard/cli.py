@@ -306,6 +306,61 @@ def ingest() -> None:
 
 
 @app.command()
+def run(
+    rules_only: bool = typer.Option(
+        False, "--rules-only", help="Skip the AI classification pass."
+    ),
+    use_embeddings: bool = typer.Option(
+        False, "--use-embeddings", help="Cluster by embeddings (needs VOYAGE_API_KEY)."
+    ),
+    digest_out: Path | None = typer.Option(
+        None, "--digest", help="Also write the weekly digest to this file."
+    ),
+) -> None:
+    """Run the full pipeline in one shot: ingest -> classify -> cluster (-> digest).
+
+    Ideal for a scheduled job so the corpus keeps accumulating. Works key-free;
+    set ANTHROPIC_API_KEY to enable the AI classification pass.
+    """
+
+    from scoutboard.briefs.digest import generate_digest
+    from scoutboard.cluster.build import build_clusters
+    from scoutboard.ingest.runner import run_ingest
+    from scoutboard.signals.pipeline import classify as run_classify
+
+    settings = get_settings()
+
+    typer.echo("[1/3] Ingesting…")
+    with get_session() as session:
+        runs = run_ingest(session)
+    inserted = sum(r.result.inserted for r in runs if not r.error)
+    errors = sum(1 for r in runs if r.error)
+    typer.echo(f"      {inserted} new item(s) from {len(runs)} source(s); {errors} error(s).")
+
+    typer.echo("[2/3] Classifying…")
+    with get_session() as session:
+        creport = run_classify(session, use_ai=not rules_only)
+    msg = f"      {creport.candidates} candidate signal(s)"
+    if creport.used_ai:
+        msg += f"; AI refined {creport.refined}, {creport.ai_failed} failed"
+    typer.echo(msg + ".")
+
+    typer.echo("[3/3] Clustering…")
+    with get_session() as session:
+        rep = build_clusters(session, use_embeddings=use_embeddings or None)
+    typer.echo(f"      {rep.clusters} cluster(s) ({rep.multi_item_clusters} multi-item).")
+
+    if digest_out is not None:
+        with get_session() as session:
+            markdown = generate_digest(session, days=7)
+        digest_out.write_text(markdown, encoding="utf-8")
+        typer.echo(f"Wrote weekly digest to {digest_out}.")
+
+    if not settings.has_ai and not rules_only:
+        typer.echo("note: ANTHROPIC_API_KEY not set — classification used rules only.")
+
+
+@app.command()
 def cluster(
     threshold: float | None = typer.Option(
         None, help="Similarity threshold (0-1). Lower = larger, looser clusters."
