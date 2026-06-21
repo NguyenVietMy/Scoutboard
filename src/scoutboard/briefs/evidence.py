@@ -51,6 +51,15 @@ class ClusterEvidence:
         return "\n".join(lines)
 
 
+def _as_aware(dt: datetime | None) -> datetime | None:
+    """Treat a stored datetime as UTC. SQLite drops tzinfo on read, so naive
+    values come back from the DB and can't be compared to aware ``now`` values."""
+
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt
+
+
 def gather_cluster_evidence(
     session: Session, cluster_id: int, *, now: datetime | None = None
 ) -> ClusterEvidence | None:
@@ -87,7 +96,8 @@ def gather_cluster_evidence(
             intent_counts[signal.intent] += 1
             for tool in signal.mentioned_tools:
                 tool_counts[tool] += 1
-        if item.published_at and item.published_at >= week_ago:
+        published = _as_aware(item.published_at)
+        if published and published >= week_ago:
             pack.mentions_last_week += 1
         pack.evidence.append(
             EvidenceItem(

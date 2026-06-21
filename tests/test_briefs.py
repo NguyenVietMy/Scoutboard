@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlmodel import select
@@ -12,7 +13,7 @@ from scoutboard.briefs.generator import generate_brief, render_brief
 from scoutboard.cluster.build import build_clusters
 from scoutboard.db import get_session
 from scoutboard.ingest.jsonl import import_jsonl
-from scoutboard.models import Cluster, OpportunityBrief
+from scoutboard.models import Cluster, ClusterItem, Item, OpportunityBrief
 from scoutboard.signals.pipeline import classify
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -78,6 +79,25 @@ def test_render_brief_includes_ai_body(scoutboard_home):
         md = render_brief(pack, ai_body="## Summary\nA real need exists [1].")
         assert "## Summary" in md
         assert "[1]" in md
+
+
+def test_evidence_handles_naive_published_at(scoutboard_home):
+    # SQLite strips tzinfo on read, so stored datetimes come back naive. Comparing
+    # them against an aware `now` must not raise (regression for a real crash).
+    with get_session() as session:
+        _seed_clusters(session)
+        cid = _first_cluster_id(session)
+        link = session.exec(
+            select(ClusterItem).where(ClusterItem.cluster_id == cid)
+        ).first()
+        item = session.get(Item, link.item_id)
+        item.published_at = datetime.now().replace(tzinfo=None)  # naive, as SQLite returns
+        session.add(item)
+        session.commit()
+
+        pack = gather_cluster_evidence(session, cid, now=datetime.now(UTC))
+        assert pack is not None
+        assert pack.mentions_last_week >= 1
 
 
 def test_generate_digest_renders(scoutboard_home):
