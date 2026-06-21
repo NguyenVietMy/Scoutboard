@@ -61,6 +61,55 @@ def init() -> None:
         )
 
 
+# A validated, key-free starter set (HN + Reddit/Lobsters public RSS) that gives
+# cross-source diversity out of the box. GitHub repos need a repo choice, so we
+# point users there rather than guessing.
+_STARTER_SOURCES: list[tuple[str, dict]] = [
+    ("hn", {"feed": "ask", "limit": 200}),
+    ("hn", {"feed": "show", "limit": 100}),
+    ("rss", {"url": "https://lobste.rs/rss", "limit": 50}),
+    ("rss", {"url": "https://www.reddit.com/r/selfhosted/.rss", "limit": 50}),
+    ("rss", {"url": "https://www.reddit.com/r/SaaS/.rss", "limit": 50}),
+]
+
+
+@app.command()
+def quickstart() -> None:
+    """Initialize and seed a starter set of key-free sources, then print next steps."""
+
+    from sqlmodel import select
+
+    from scoutboard.models import Source
+
+    settings = get_settings()
+    settings.ensure_home()
+    init_db()
+    typer.echo(f"Initialized Scoutboard in {settings.home}")
+
+    added = 0
+    with get_session() as session:
+        existing = [(s.kind, s.config) for s in session.exec(select(Source)).all()]
+        for kind, config in _STARTER_SOURCES:
+            if (kind, config) in existing:
+                continue
+            session.add(Source(kind=kind, config=config))
+            added += 1
+        session.commit()
+    typer.echo(f"Added {added} starter source(s); {len(_STARTER_SOURCES) - added} already present.")
+
+    typer.echo("\nNext steps:")
+    typer.echo("  scoutboard ingest                 # pull items from the starter feeds")
+    if settings.has_ai:
+        typer.echo("  scoutboard classify               # rules + AI (ANTHROPIC_API_KEY detected)")
+    else:
+        typer.echo("  scoutboard classify --rules-only  # no API key needed")
+        typer.echo("  #   (set ANTHROPIC_API_KEY in .env to enable sharper AI classification)")
+    typer.echo("  scoutboard cluster                # group repeated needs")
+    typer.echo("  scoutboard brief --cluster 1      # a cited opportunity brief")
+    typer.echo("  scoutboard serve                  # browse the inbox in your browser")
+    typer.echo("\nTip: add a GitHub repo with `scoutboard source add github --repo owner/name`.")
+
+
 @source_app.command("add")
 def source_add(
     kind: str = typer.Argument(
