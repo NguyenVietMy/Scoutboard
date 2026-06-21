@@ -6,6 +6,8 @@ Parsing operates on a parsed feed object so tests can feed it a fixture string.
 
 from __future__ import annotations
 
+import html
+import re
 import time
 from collections.abc import Iterable
 from datetime import UTC, datetime
@@ -13,6 +15,17 @@ from datetime import UTC, datetime
 import feedparser
 
 from scoutboard.schemas import NormalizedItem
+
+_TAG = re.compile(r"<[^>]+>")
+
+
+def _clean_html(text: str | None) -> str:
+    """RSS bodies/titles carry raw HTML; strip tags and decode entities so the
+    stored text is readable and downstream tokenizing stays clean."""
+
+    if not text:
+        return ""
+    return re.sub(r"\s+", " ", html.unescape(_TAG.sub(" ", text))).strip()
 
 
 def _entry_published(entry) -> datetime | None:
@@ -24,10 +37,10 @@ def _entry_published(entry) -> datetime | None:
 
 def _entry_body(entry) -> str:
     if entry.get("summary"):
-        return entry["summary"]
+        return _clean_html(entry["summary"])
     content = entry.get("content")
     if content:
-        return content[0].get("value", "")
+        return _clean_html(content[0].get("value", ""))
     return ""
 
 
@@ -42,7 +55,7 @@ def parse_feed(parsed: feedparser.FeedParserDict, feed_url: str) -> list[Normali
                 source="rss",
                 external_id=f"rss:{external}",
                 source_url=link,
-                title=entry.get("title"),
+                title=_clean_html(entry.get("title")) or None,
                 body=_entry_body(entry),
                 author=entry.get("author"),
                 published_at=_entry_published(entry),

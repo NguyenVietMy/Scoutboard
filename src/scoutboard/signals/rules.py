@@ -76,16 +76,20 @@ _STOPWORDS = {
 _WORD = re.compile(r"[a-zA-Z][a-zA-Z0-9+\-]{2,}")
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 _URL = re.compile(r"https?://\S+|www\.\S+")
+_TAG = re.compile(r"<[^>]+>")
 
 
 def clean_text(text: str | None) -> str:
-    """Decode HTML entities and drop URLs before tokenizing.
+    """Strip HTML, decode entities, and drop URLs before tokenizing.
 
-    Sources like the HN Algolia API return HTML-escaped text, and pasted links
-    add noise tokens (``https``, ``com``); both wreck topic terms and clusters.
+    Sources vary in cleanliness: the HN Algolia API returns HTML-escaped text,
+    RSS bodies carry raw markup (``<div>``, ``<a href>``), and pasted links add
+    noise tokens (``https``, ``com``). All would otherwise become topic terms and
+    wreck clusters, so we normalize here before any tokenizing.
     """
 
-    return _URL.sub(" ", html.unescape(text or ""))
+    unescaped = html.unescape(text or "")
+    return _URL.sub(" ", _TAG.sub(" ", unescaped))
 
 
 @dataclass

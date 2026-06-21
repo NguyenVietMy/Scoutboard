@@ -56,6 +56,9 @@ def test_parse_rss_feed():
     assert items[0].source == "rss"
     assert items[0].title == "Why we left Airtable"
     assert items[0].parent.type == "feed"
+    # RSS bodies carry raw HTML; it must be stripped to clean text on ingest.
+    assert "<" not in items[0].body and "href" not in items[0].body
+    assert "We migrated from Airtable" in items[0].body
 
 
 # --- persistence + dedup -------------------------------------------------------

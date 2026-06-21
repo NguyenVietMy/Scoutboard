@@ -9,7 +9,7 @@
       <guid>https://example.com/posts/left-airtable</guid>
       <author>writer@example.com</author>
       <pubDate>Tue, 10 Jun 2026 12:00:00 GMT</pubDate>
-      <description>We migrated from Airtable to a local-first stack. Here is why.</description>
+      <description>&lt;div&gt;We migrated from Airtable to a local-first stack. &lt;a href="https://example.com/x"&gt;Here&lt;/a&gt; is why.&lt;/div&gt;</description>
     </item>
     <item>
       <title>Comparing enrichment tools</title>

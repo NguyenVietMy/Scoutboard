@@ -45,13 +45,16 @@ def test_topic_terms_drop_stopwords():
     assert "the" not in terms and "for" not in terms
 
 
-def test_topic_terms_strip_html_entities_and_urls():
-    # HN's Algolia API returns HTML-escaped text; pasted links add noise tokens.
-    text = "Anyone tried Supabase? It&#x27;s great, see https://github.com/foo/bar"
+def test_topic_terms_strip_html_entities_urls_and_tags():
+    # HN escapes text, RSS carries raw markup, and pasted links add noise tokens.
+    text = (
+        "<div>Anyone tried <a href='x'>Supabase</a>?</div> "
+        "It&#x27;s great, see https://github.com/foo/bar"
+    )
     terms = rules.extract_topic_terms(text)
     assert "supabase" in terms
-    # Entity fragments and URL parts must never become topic terms.
-    for junk in ("x27", "x2f", "quot", "https", "github", "com"):
+    # Entity fragments, URL parts, and HTML tag names must never become terms.
+    for junk in ("x27", "x2f", "quot", "https", "github", "com", "div", "href", "span"):
         assert junk not in terms
 
 
