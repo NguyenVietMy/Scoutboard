@@ -1,5 +1,8 @@
 # Scoutboard
 
+[![CI](https://github.com/NguyenVietMy/Scoutboard/actions/workflows/ci.yml/badge.svg)](https://github.com/NguyenVietMy/Scoutboard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Local-first, open-source **opportunity discovery workbench** for indie SaaS, local-first, and
 open-source builders. Scoutboard monitors public feeds and imported signals, then turns repeated
 asks, complaints, comparisons, migration signals, and integration requests into **cited
